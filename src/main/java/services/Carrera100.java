@@ -70,7 +70,7 @@ public class Carrera100 {
 		numAtletasLlegados++;
 		long tiempoLlegada = System.currentTimeMillis();
 		long tiempoTranscurrido = tiempoLlegada - tiempoIni;
-		listaAtletas.put(dorsal, tiempoLlegada);
+		listaAtletas.put(dorsal, tiempoTranscurrido);
 		
 		if (numAtletasLlegados == numAtletas) {
 			synchronized(resultadosLock) {resultadosLock.notifyAll();}
@@ -95,17 +95,16 @@ public class Carrera100 {
 	        .sorted((entry1, entry2) -> Long.compare(entry1.getValue(), entry2.getValue()))
 	        .forEach(entry -> {
 	            resultados.append("Atleta " + entry.getKey() + ": " 
-	                + formatTime(entry.getValue()) + " (ms)\n");
+	                + formatTime(entry.getValue()) + " (s:ms)\n");
 	        });
 		    return resultados.toString();
 		}
 	}
 	
 	private String formatTime(long tiempoMs) {
-		long minutos = tiempoMs/60000;
-		long segundos = (tiempoMs%60000)/1000;
+		long segundos = tiempoMs/1000;
 		long milisegundos = tiempoMs%1000;
-		String formato = String.format("%02d:%02d:%03d",minutos,segundos,milisegundos);
+		String formato = String.format("%02d:%03d",segundos,milisegundos);
 		return formato;
 	}
 }
