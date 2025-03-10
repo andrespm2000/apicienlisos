@@ -20,6 +20,8 @@ public class Carrera100 {
 	String listaResultados = "";
 	ConcurrentHashMap<Integer,Long> listaAtletas = new ConcurrentHashMap<Integer, Long>(MAX_ATLETAS);
 	
+	final Object resultadosLock = new Object();
+	
 	@Path("reinicio")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
@@ -30,29 +32,27 @@ public class Carrera100 {
 		numAtletasListos = 0;
 		numAtletasLlegados = 0;
 		listaResultados = "";
-		return "Reiniciado";
+		return "La carrera se ha reiniciado";
 	}
 	
 	@Path("preparado")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
-	public String preparado()  throws InterruptedException {
-		synchronized(this.getClass()) {
+	public synchronized String preparado()  throws InterruptedException {
 			this.numAtletasPreparados++;
 			if(this.numAtletasPreparados < numAtletas) {
 				this.wait();
 			}else {
 				this.notifyAll();
 			}
-		}
-		return "Preparados todos";
+		return "Preparado";
+
 	}
 	
 	@Path("listo")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
-	public String listo() throws InterruptedException {
-		synchronized(this.getClass()) {
+	public synchronized String listo() throws InterruptedException {
 			this.numAtletasListos++;
 			if(this.numAtletasListos < numAtletas) {
 				this.wait();
@@ -60,8 +60,7 @@ public class Carrera100 {
 				tiempoIni = System.currentTimeMillis();
 				this.notifyAll();
 			}
-		}
-		return "Listos todos";
+		return "Listo";
 	}
 	
 	@Path("llegada")
@@ -70,22 +69,43 @@ public class Carrera100 {
 	public String llegada(@QueryParam(value="dorsal") int dorsal) {
 		numAtletasLlegados++;
 		long tiempoLlegada = System.currentTimeMillis();
+		long tiempoTranscurrido = tiempoLlegada - tiempoIni;
 		listaAtletas.put(dorsal, tiempoLlegada);
-		return "El atleta "+dorsal+" ha llegado en "+(tiempoLlegada - tiempoIni);
+		
+		if (numAtletasLlegados == numAtletas) {
+			synchronized(resultadosLock) {resultadosLock.notifyAll();}
+	    }
+		
+		return "El atleta "+dorsal+" ha llegado en "+ tiempoTranscurrido + " ms";
 	}
 	
 	@Path("resultados")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String resultados() throws InterruptedException {
-		synchronized(this.getClass()) {
-			if(this.numAtletasLlegados < numAtletas) {
-				this.wait();
-			}else {
-				this.notifyAll();
-			}
+		synchronized(resultadosLock) {
+			while (this.numAtletasLlegados < numAtletas) {
+		        resultadosLock.wait();
+		    }
+			
+			StringBuilder resultados = new StringBuilder();
+		    resultados.append("=== Resultados de la Carrera ===\n\n");
+
+		    listaAtletas.entrySet().stream()
+	        .sorted((entry1, entry2) -> Long.compare(entry1.getValue(), entry2.getValue()))
+	        .forEach(entry -> {
+	            resultados.append("Atleta " + entry.getKey() + ": " 
+	                + formatTime(entry.getValue()) + " (ms)\n");
+	        });
+		    return resultados.toString();
 		}
-		listaAtletas.forEach((k,v) -> listaResultados = listaResultados.concat(k.toString()+": "+v.toString()+"\n"));
-		return listaResultados;
+	}
+	
+	private String formatTime(long tiempoMs) {
+		long minutos = tiempoMs/60000;
+		long segundos = (tiempoMs%60000)/1000;
+		long milisegundos = tiempoMs%1000;
+		String formato = String.format("%02d:%02d:%03d",minutos,segundos,milisegundos);
+		return formato;
 	}
 }

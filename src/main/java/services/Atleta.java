@@ -25,9 +25,9 @@ public class Atleta extends Thread {
 	
 	public void run() {
     	try {
-    			System.out.println(targetAtleta.path("preparado").request(MediaType.TEXT_PLAIN).get(String.class));
+    			System.out.println(dorsal + ": " + targetAtleta.path("preparado").request(MediaType.TEXT_PLAIN).get(String.class));
     			
-    			System.out.println(targetAtleta.path("listo").request(MediaType.TEXT_PLAIN).get(String.class));
+    			System.out.println(dorsal + ": " + targetAtleta.path("listo").request(MediaType.TEXT_PLAIN).get(String.class));
     			
                 int tiempoCarrera = (int) (Math.random() * 2000) + 9000;
                 Thread.sleep(tiempoCarrera);

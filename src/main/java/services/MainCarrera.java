@@ -11,6 +11,7 @@ public class MainCarrera {
 	static Client cliente;
 	static URI uri;
 	static WebTarget target;
+	static int intAtletas;
 	
 	public static void main(String[] args) {
 		if (args.length != 2) {
@@ -19,7 +20,7 @@ public class MainCarrera {
         }
 		
 		try {
-            int intAtletas = Integer.parseInt(args[1]);
+            intAtletas = Integer.parseInt(args[1]);
             if (intAtletas < 1 || intAtletas > 16) {
             	System.out.println("Error: El número de atletas no está en el rango permitido (1 a 16)");
                 return;
@@ -34,9 +35,9 @@ public class MainCarrera {
 		uri = UriBuilder.fromUri(uriFormat).build();
 		WebTarget target = cliente.target(uri);
 		
-		System.out.println(target.path("reinicio").request(MediaType.TEXT_PLAIN).get(String.class));
+		System.out.println(target.path("reinicio").queryParam("num", intAtletas).request(MediaType.TEXT_PLAIN).get(String.class));
 		
-		for(int i = 1; i<= Integer.parseInt(args[1]); i++) {
+		for(int i = 1; i<= intAtletas; i++) {
 			Atleta atleta = new Atleta(i,args[0]);
 			atleta.start();
 		}
